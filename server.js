@@ -13,6 +13,14 @@ app.get('/edit', (req, res) => {
   res.sendFile(__dirname + '/public/edit.html');
 });
 
+app.get('/login', (req, res) => {
+  res.sendFile(__dirname + '/public/login.html');
+});
+
+app.get('/join', (req, res) => {
+  res.sendFile(__dirname + '/public/join.html');
+});
+
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });

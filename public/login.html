@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <title>퀴즈 로그인</title> 
+  <link rel="stylesheet" href="/style.css"> <!-- 절대 경로로 수정 -->
+</head>
+
+<body>
+  <!-- 정상화 퀴즈 제목 링크 -->
+  <h1><a href="/" style="text-decoration: none; color: inherit;">정상화 퀴즈</a></h1>
+
+  <!-- 로그인 UI 추가 -->
+  <div class="content-container" style="display: flex; flex-direction: column; align-items: center; margin-top: 150px;">
+    <form action="/login" method="post" style="display: flex; align-items: flex-start; gap: 20px;">
+      <div style="display: flex; flex-direction: row; gap: 20px; align-items: center;">
+        <div style="display: flex; flex-direction: column; gap: 15px; align-items: flex-end;">
+          <label for="username" style="font-weight: bold; font-size: 1.5em;">아이디</label>
+          <label for="password" style="font-weight: bold; font-size: 1.5em;">비밀번호</label>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <input type="text" id="username" name="username" style="padding: 10px; border: 2px solid black; font-family: 'CookieRun', Arial, sans-serif; font-size: 1.2em;">
+          <input type="password" id="password" name="password" style="padding: 10px; border: 2px solid black; font-family: 'CookieRun', Arial, sans-serif; font-size: 1.2em;">
+        </div>
+        <button type="submit" style="padding: 36.5px 17px; border: 2px solid black; cursor: pointer; font-size: 1.5em;">로그인</button>
+      </div>
+    </form>
+    <div style="text-align: center; margin-top: 10px;">
+      <a href="/register" style="text-decoration: none; color: inherit; font-size: 1.5em;">회원 가입</a>
+      <br>
+      <a href="/forgot" style="text-decoration: none; color: inherit; font-size: 1.5em;">아이디/비밀번호 찾기</a>
+    </div>
+  </div>
+</body>
+
+</html>
