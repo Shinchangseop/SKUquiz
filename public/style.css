@@ -1,0 +1,67 @@
+@font-face {
+  font-family: 'CookieRun'; /* 폰트 이름 지정 */
+  src: url('fonts/CookieRun-Regular.ttf') format('truetype'); /* 웹 서버의 상대 경로로 폰트 파일 지정 */
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* body에 폰트 설정 */
+body {
+  background-color: white; /* 배경색을 흰색으로 설정 */
+  font-family: 'CookieRun', Arial, sans-serif; /* 모든 텍스트에 폰트를 기본으로 적용 */
+  color: black; /* 모든 텍스트를 검정색으로 설정 */
+  text-align: center;
+}
+
+/* 버튼에도 폰트를 명시적으로 적용 */
+button {
+  font-family: 'CookieRun', Arial, sans-serif; /* 모든 버튼에 폰트를 적용 */
+}
+
+
+.button-container {
+  position: fixed; /* 화면에 고정된 위치에 배치 */
+  bottom: 20%; /* 화면 아래에서 20% 위로 설정 */
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.login-button {
+  position: fixed; /* 화면에 고정된 위치에 배치 */
+  top: 20px; /* 화면 위쪽에서 20px 떨어진 위치 */
+  right: 20px; /* 화면 오른쪽에서 20px 떨어진 위치 */
+  background-color: black; /* 기본 흰색 배경 */
+  color: white; /* 흰색 글씨로 평소에는 안 보이도록 */
+  padding: 10px 20px;
+  font-size: 1em;
+  border: none;
+  border-radius: 25px; /* 둥근 테두리 */
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease; /* 배경색 및 글씨색 전환 효과 */
+  z-index: 1000; /* 다른 요소보다 위에 위치하도록 설정 */
+}
+
+/* 마우스를 올렸을 때의 스타일 */
+.login-button:hover {
+  background-color: rgb(221, 221, 221); /* 마우스를 올렸을 때 배경색 검은색 */
+  color: black; /* 마우스를 올렸을 때 흰색 글씨 */
+}
+
+.participate-button, .create-button {
+  background-color: black; /* 기본 흰색 배경 */
+  color: white; /* 흰색 글씨로 평소에는 안 보이도록 */
+  padding: 20px 40px;
+  margin: 10px;
+  font-size: 1.5em;
+  border: none;
+  border-radius: 25px; /* 둥근 테두리 */
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease; /* 배경색 및 글씨색 전환 효과 */
+}
+
+.participate-button:hover, .create-button:hover {
+  background-color: rgb(221, 221, 221); /* 마우스를 올렸을 때 배경색 검은색 */
+  color: black; /* 마우스를 올렸을 때 흰색 글씨 */
+}
+
