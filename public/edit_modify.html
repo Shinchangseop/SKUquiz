@@ -6,6 +6,9 @@
   <title>퀴즈 관리</title>
   <link rel="stylesheet" href="/style.css"> <!-- 절대 경로로 수정 -->
   <style>
+    .content-container p {
+    font-size: 1.5em; /* 글씨 크기를 기본 크기의 1.5배로 설정 */
+    }
     .content-container {
       display: flex;
       flex-direction: column;
@@ -136,8 +139,9 @@
         alert('편집할 퀴즈를 선택해주세요.');
         return;
       }
-      window.location.href = `/edit/new?quizId=${selectedQuizId}`;
+      window.location.href = `/edit/modify/text?quizId=${selectedQuizId}`;
     });
+
 
     document.getElementById('delete-button').addEventListener('click', () => {
       if (!selectedQuizId) {

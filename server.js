@@ -72,6 +72,10 @@ app.get('/edit/modify', (req, res) => {
   res.sendFile(__dirname + '/public/edit_modify.html');
 });
 
+app.get('/edit/modify/text', (req, res) => {
+  res.sendFile(__dirname + '/public/edit_modify_text.html');
+});
+
 app.get('/login', (req, res) => {
   res.sendFile(__dirname + '/public/login.html');
 });
@@ -83,6 +87,7 @@ app.get('/join', (req, res) => {
 app.get('/register', (req, res) => {
   res.sendFile(__dirname + '/public/register.html');
 });
+
 
 // 회원가입 처리 라우트
 app.post('/register', async (req, res) => {
@@ -264,9 +269,72 @@ app.delete('/delete-quiz', async (req, res) => {
   }
 });
 
-
-
-
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
+});
+
+// 퀴즈 데이터 가져오기 라우트
+app.get('/get-quiz', async (req, res) => {
+  const { quizId } = req.query;
+
+  if (!quizId) {
+    return res.status(400).json({ message: '퀴즈 ID가 필요합니다.' });
+  }
+
+  try {
+    // 데이터베이스에서 해당 퀴즈 정보를 가져옴
+    const quizResult = await pool.query('SELECT * FROM quizzes WHERE id = $1', [quizId]);
+
+    if (quizResult.rows.length === 0) {
+      return res.status(404).json({ message: '퀴즈를 찾을 수 없습니다.' });
+    }
+
+    const quiz = quizResult.rows[0];
+
+    // 퀴즈에 해당하는 질문들을 가져옴
+    const questionsResult = await pool.query('SELECT * FROM questions WHERE quiz_id = $1 ORDER BY id ASC', [quizId]);
+    const questions = questionsResult.rows.map(row => ({
+      question: row.question,
+      answer: row.answer,
+      displayAnswer: row.answer.split('/')[0] // 정답에서 '/' 기준으로 앞에 있는 값 사용
+    }));
+
+    res.json({
+      title: quiz.title,
+      questions: questions
+    });
+  } catch (error) {
+    console.error('퀴즈 데이터를 불러오는 중 오류 발생:', error.message);
+    res.status(500).json({ message: '서버 내부 오류가 발생했습니다. 다시 시도해주세요.' });
+  }
+});
+
+
+// 퀴즈 수정 라우트
+app.post('/update-quiz', async (req, res) => {
+  const { quizId, title, questions } = req.body;
+
+  if (!quizId || !title || !questions || !Array.isArray(questions)) {
+    return res.status(400).json({ message: '필수 데이터 누락 또는 형식 오류' });
+  }
+
+  try {
+    // 퀴즈 제목 업데이트
+    await pool.query('UPDATE quizzes SET title = $1 WHERE id = $2', [title, quizId]);
+
+    // 기존의 질문들을 모두 삭제하고 새롭게 추가 (간단한 구현 방식)
+    await pool.query('DELETE FROM questions WHERE quiz_id = $1', [quizId]);
+
+    for (const question of questions) {
+      await pool.query(
+        'INSERT INTO questions (quiz_id, question, answer) VALUES ($1, $2, $3)',
+        [quizId, question.question, question.answer]
+      );
+    }
+
+    res.json({ message: '퀴즈가 성공적으로 수정되었습니다.' });
+  } catch (error) {
+    console.error('퀴즈 수정 중 오류 발생:', error.message);
+    res.status(500).json({ message: '퀴즈 수정 중 오류가 발생했습니다. 다시 시도해주세요.' });
+  }
 });
