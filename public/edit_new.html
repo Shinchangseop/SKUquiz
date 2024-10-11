@@ -8,17 +8,17 @@
   <style>
     .content-container {
       text-align: center;
-      margin-top: 120px; /* 여백 조정 */
+      margin-top: 120px; /* 기존의 1.5배 */
     }
 
-    .action-option-container {
+    .quiz-option-container {
       display: flex;
       justify-content: center;
-      gap: 75px; /* 각 버튼 사이의 간격 */
-      margin-top: 75px;
+      gap: 75px; /* 각 퀴즈 유형 버튼 사이의 간격 (1.5배 증가) */
+      margin-top: 75px; /* 기존의 1.5배 */
     }
 
-    .action-option {
+    .quiz-option {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -28,7 +28,7 @@
       padding: 10px;
     }
 
-    .action-option img {
+    .quiz-option img {
       width: 225px; /* 기존 150px의 1.5배 */
       height: 225px; /* 기존 150px의 1.5배 */
       border: 2px solid black;
@@ -36,16 +36,10 @@
       border-radius: 10px; /* 이미지 모서리를 살짝 둥글게 설정 */
     }
 
-    .action-option p {
+    .quiz-option p {
       font-size: 1.8em; /* 기존의 1.2em의 1.5배 */
       font-weight: bold;
       margin-top: 10px; /* 이미지와 텍스트 사이의 간격 */
-    }
-
-    /* 버튼 호버 시 스타일 변경 */
-    .action-option:hover {
-      background-color: grey; /* 배경색을 회색으로 변경 */
-      color: white; /* 글씨 색 유지 */
     }
 
     h1 {
@@ -54,6 +48,12 @@
 
     p {
       font-size: 2.5em; /* 설명 텍스트 크기도 1.5배로 증가 */
+    }
+
+    /* 퀴즈 유형 선택 시 마우스를 올렸을 때 스타일 */
+    .quiz-option:hover {
+      background-color: grey; /* 배경색을 회색으로 변경 */
+      color: white; /* 글씨 색을 흰색으로 변경 */
     }
   </style>
 </head>
@@ -69,18 +69,23 @@
 
   <!-- 콘텐츠 추가 -->
   <div class="content-container">
-    <p>원하는 작업을 선택해주세요</p>
+    <p>제작하고 싶은 퀴즈 유형을 골라주세요</p>
 
-    <!-- 새로 만들기 / 퀴즈 관리 버튼 영역 -->
-    <div class="action-option-container">
-      <div class="action-option" onclick="location.href='/edit/new'">
-        <img src="/images/edit_image_new.webp" alt="새로 만들기">
-        <p>새로 만들기</p>
+    <!-- 퀴즈 유형 선택 영역 -->
+    <div class="quiz-option-container">
+      <div class="quiz-option" onclick="location.href='/edit/new/text'">
+        <img src="/images/edit_image_01.png" alt="문장형 퀴즈">
+        <p>문장형</p>
       </div>
 
-      <div class="action-option" onclick="location.href='/edit/modify'">
-        <img src="/images/edit_image_mod.webp" alt="퀴즈 관리">
-        <p>퀴즈 관리</p>
+      <div class="quiz-option" onclick="location.href='/edit/new/image'">
+        <img src="/images/edit_image_02.webp" alt="그림형 퀴즈">
+        <p>그림형</p>
+      </div>
+
+      <div class="quiz-option" onclick="location.href='edit/new/sound'">
+        <img src="/images/edit_image_03.webp" alt="사운드형 퀴즈">
+        <p>사운드형</p>
       </div>
     </div>
   </div>

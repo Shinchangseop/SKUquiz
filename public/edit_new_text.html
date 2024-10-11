@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <title>퀴즈 제작</title>
+  <link rel="stylesheet" href="/style.css"> <!-- 절대 경로로 수정 -->
+  <style>
+    .content-container {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 50px;
+      gap: 0px; /* 목록과 문제/정답 상자 사이의 간격 제거 */
+    }
+
+    .list-container {
+      display: flex;
+      flex-direction: column;
+      width: 21%; /* 목록 박스 가로 크기 */
+      align-items: flex-start; /* 목록 제목을 왼쪽 상단으로 정렬 */
+      margin-left: 15%;
+    }
+
+    .list {
+      margin-top: 5px;
+      width: 95%;
+      height: 80%;
+      border: 2px solid black;
+      padding: 10px;
+      overflow-y: auto;
+      font-size: 1.2em;
+    }
+
+    .list-item {
+      margin: 0; /* 목록 항목 간 간격 줄임 */
+    }
+
+    .move-buttons {
+      width: 100%;
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      margin-left: 5px;
+    }
+
+    .move-buttons button {
+      width: 50%;
+      padding: 5px;
+      font-size: 1.5em;
+      cursor: pointer;
+    }
+
+    .buttons {
+      width: 100%;
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-left: 5px;
+    }
+
+    .buttons button {
+      padding: 10px 10px; /* 버튼의 가로 길이를 줄임 */
+      width: 50%;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+
+    .form-container {
+      display: flex;
+      flex-direction: column;
+      width: 46%; /* 문제/정답 박스 가로 크기 */
+      align-items: flex-start; /* 문제, 정답 제목을 왼쪽 상단으로 정렬 */
+      margin-right: 15%;
+    }
+
+    .form-container textarea,
+    .form-container input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid black;
+      margin-top: 5px;
+      font-size: 1.5em;
+      font-family: 'CookieRun', Arial, sans-serif; /* 폰트 적용 */
+      resize: none; /* 문제 텍스트 박스 크기 조절 불가 설정 */
+    }
+
+    .complete-button {
+      align-self: flex-end;
+      margin-top: 20px;
+      padding: 10px 30px;
+      font-size: 1.5em;
+      cursor: pointer;
+    }
+
+    .cancel-button {
+      align-self: flex-end;
+      margin-top: 20px;
+      margin-left: 20px;
+      padding: 10px 30px;
+      font-size: 1.5em;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 정상화 퀴즈 제목 링크 -->
+  <h1><a href="/" style="text-decoration: none; color: inherit;">정상화 퀴즈</a></h1>
+
+  <!-- 콘텐츠 추가 -->
+  <div class="content-container">
+    <!-- 목록 영역 -->
+    <div class="list-container">
+      <label for="title" style="font-weight: bold; font-size: 1.5em; margin-bottom: 5px; align-self: flex-start;">제목</label>
+      <input type="text" id="title" style="width: 95%; padding: 15px; border: 2px solid black; margin-bottom: 15px; font-size: 1.5em; font-family: 'CookieRun', Arial, sans-serif;">
+      <label for="list" style="font-weight: bold; font-size: 1.5em; margin-bottom: 5px; align-self: flex-start;">문제 목록</label>
+      <div id="list" class="list">
+      </div>
+      <div class="move-buttons">
+        <button id="moveUpButton">▲</button>
+        <button id="moveDownButton">▼</button>
+      </div>
+      <div class="buttons">
+        <button id="addButton">문제 추가</button>
+        <button id="removeButton">문제 제거</button>
+      </div>
+
+    </div>
+
+    <!-- 문제 및 정답 작성 영역 -->
+    <div class="form-container">
+      <label for="question" style="font-weight: bold; font-size: 1.5em; margin-bottom: 5px; align-self: flex-start;">질문</label>
+      <textarea id="question" rows="8" disabled></textarea>
+
+      <label for="answer" style="font-weight: bold; font-size: 1.5em; margin-bottom: 5px; margin-top: 15px; align-self: flex-start;">정답</label>
+      <input type="text" id="answer" disabled>
+
+      <p style="font-size: 1em; margin-top: 10px; align-self: flex-start;">중복 정답은 '/'로 구분</p>
+
+      <div style="display: flex;">
+        <button class="complete-button" onclick="saveQuiz()">완료</button>
+        <button class="cancel-button" onclick="window.location.href='/edit/new'">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const addButton = document.getElementById("addButton");
+    const removeButton = document.getElementById("removeButton");
+    const moveUpButton = document.getElementById("moveUpButton");
+    const moveDownButton = document.getElementById("moveDownButton");
+    const list = document.getElementById("list");
+    const questionTextarea = document.getElementById("question");
+    const answerInput = document.getElementById("answer");
+    const titleInput = document.getElementById("title");
+
+    let currentSelection = null;
+
+    // + 버튼 클릭 시 새 문제 추가
+    addButton.addEventListener("click", () => {
+      const newItem = document.createElement("div");
+      newItem.textContent = "새 문제";
+      newItem.classList.add("list-item");
+      newItem.style.cursor = "pointer";
+      newItem.style.padding = "5px 0";
+
+      // 새 문제 클릭 시 문제 및 정답 작성 가능하도록 설정
+      newItem.addEventListener("click", () => {
+        if (currentSelection) {
+          currentSelection.style.backgroundColor = "";
+        }
+        currentSelection = newItem;
+        newItem.style.backgroundColor = "lightgrey";
+        questionTextarea.disabled = false;
+        answerInput.disabled = false;
+        questionTextarea.value = newItem.dataset.question || "";
+        answerInput.value = newItem.dataset.answer || "";
+      });
+
+      list.appendChild(newItem);
+    });
+
+    // - 버튼 클릭 시 선택된 문제 삭제
+    removeButton.addEventListener("click", () => {
+      if (currentSelection) {
+        const nextSelection = currentSelection.previousElementSibling || currentSelection.nextElementSibling;
+        list.removeChild(currentSelection);
+        if (nextSelection) {
+          nextSelection.click();
+        } else {
+          currentSelection = null;
+          questionTextarea.disabled = true;
+          answerInput.disabled = true;
+          questionTextarea.value = "";
+          answerInput.value = "";
+        }
+      }
+    });
+
+    // ▲ 버튼 클릭 시 선택된 문제 위로 이동
+    moveUpButton.addEventListener("click", () => {
+      if (currentSelection && currentSelection.previousElementSibling) {
+        list.insertBefore(currentSelection, currentSelection.previousElementSibling);
+      }
+    });
+
+    // ▼ 버튼 클릭 시 선택된 문제 아래로 이동
+    moveDownButton.addEventListener("click", () => {
+      if (currentSelection && currentSelection.nextElementSibling) {
+        list.insertBefore(currentSelection.nextElementSibling, currentSelection);
+      }
+    });
+
+    // 문제 또는 정답 입력 시 현재 선택된 항목에 데이터 저장
+    questionTextarea.addEventListener("input", () => {
+      if (currentSelection) {
+        currentSelection.dataset.question = questionTextarea.value;
+      }
+    });
+
+    answerInput.addEventListener("input", () => {
+      if (currentSelection) {
+        currentSelection.dataset.answer = answerInput.value;
+        const firstAnswer = answerInput.value.split("/")[0];
+        currentSelection.textContent = firstAnswer || "새 문제";
+      }
+    });
+
+    // 완료 버튼 클릭 시 퀴즈 저장 함수
+    document.addEventListener('DOMContentLoaded', function() {
+  let username = '';
+
+  // 로그인 상태와 사용자명 가져오기
+  fetch('/check-login')
+    .then(response => response.json())
+    .then(data => {
+      if (data.loggedIn) {
+        username = data.username;
+      }
+    })
+    .catch(error => {
+      console.error('로그인 상태 확인 중 오류 발생:', error);
+    });
+
+  // 퀴즈 저장 함수
+  function saveQuiz() {
+    const title = document.getElementById('title').value.trim(); // 제목 입력란 값 가져오기
+    const questions = [];
+
+    const listItems = document.querySelectorAll(".list-item");
+    listItems.forEach(item => {
+      if (item.dataset.question && item.dataset.answer) {
+        questions.push({
+          question: item.dataset.question.trim(), // 질문 값
+          answer: item.dataset.answer.trim() // 정답 값
+        });
+      }
+    });
+
+    if (!title || questions.length === 0) {
+      alert("퀴즈 제목과 문제를 모두 입력해주세요.");
+      return;
+    }
+
+    if (!username) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    const quizData = {
+      title,
+      username,
+      questions
+    };
+
+    fetch('/save-quiz', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(quizData)
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('서버 오류');
+      }
+      return response.json();
+    })
+    .then(data => {
+      alert('퀴즈가 성공적으로 저장되었습니다.');
+      window.location.href = '/';
+    })
+    .catch(error => {
+      console.error('퀴즈 저장 중 오류 발생:', error);
+      alert('퀴즈 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+    });
+  }
+
+  // 저장 버튼 클릭 이벤트와 연결
+  const saveButton = document.querySelector('.complete-button');
+  if (saveButton) {
+    saveButton.addEventListener('click', saveQuiz);
+  }
+});
+
+
+  </script>
+</body>
+
+</html>

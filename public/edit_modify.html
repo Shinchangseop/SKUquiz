@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <title>퀴즈 관리</title>
+  <link rel="stylesheet" href="/style.css"> <!-- 절대 경로로 수정 -->
+  <style>
+    .content-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 50px;
+    }
+
+    .quiz-list {
+      width: 60%;
+      border: 2px solid black;
+      padding: 20px;
+      font-size: 1.5em;
+      margin-top: 20px;
+    }
+
+    .quiz-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+      cursor: pointer;
+    }
+
+    .quiz-item:hover {
+      background-color: #f0f0f0;
+    }
+
+    .buttons-container {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .buttons-container button {
+      padding: 10px 20px;
+      font-size: 1.5em;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 정상화 퀴즈 제목 링크 -->
+  <h1><a href="/" style="text-decoration: none; color: inherit;">정상화 퀴즈</a></h1>
+
+  <!-- 로그인 버튼/사용자 정보 표시 영역 -->
+  <div id="user-info" style="position: fixed; top: 20px; right: 20px;">
+    <!-- 로그인/로그아웃 버튼과 사용자 이름 표시를 위한 영역 -->
+  </div>
+
+  <!-- 콘텐츠 추가 -->
+  <div class="content-container">
+    <p><span id="username-placeholder"></span>님이 출제한 퀴즈 목록</p>
+    <div id="quiz-list" class="quiz-list">
+      <!-- 퀴즈 목록이 여기에 표시됩니다 -->
+    </div>
+
+    <!-- 버튼 영역 -->
+    <div class="buttons-container">
+      <button id="edit-button">편집</button>
+      <button id="delete-button">삭제</button>
+      <button id="cancel-button" onclick="window.location.href='/edit'">취소</button>
+    </div>
+  </div>
+
+  <script>
+    let selectedQuizId = null;
+
+    // 로그인 상태에 따라 로그인/로그아웃 버튼과 사용자 이름을 표시하는 JavaScript
+    document.addEventListener('DOMContentLoaded', function () {
+      fetch('/check-login')
+        .then(response => response.json())
+        .then(data => {
+          const userInfo = document.getElementById('user-info');
+          if (data.loggedIn) {
+            document.getElementById('username-placeholder').innerText = data.username;
+            userInfo.innerHTML = `
+              <span style="font-size: 1.5em; font-weight: bold; margin-right: 150px; margin-top: 10px; display: inline-block;">${data.username}</span>
+              <button class="login-button" onclick="location.href='/logout/'">로그아웃</button>
+            `;
+            loadQuizList(data.username);
+          } else {
+            alert('로그인이 필요합니다.');
+            window.location.href = '/login';
+          }
+        })
+        .catch(error => {
+          console.error('로그인 상태 확인 중 오류 발생:', error);
+        });
+    });
+
+    // 퀴즈 목록 로드
+    function loadQuizList(username) {
+      fetch(`/quizzes?username=${username}`)
+        .then(response => response.json())
+        .then(data => {
+          const quizList = document.getElementById('quiz-list');
+          quizList.innerHTML = '';
+
+          data.forEach(quiz => {
+            const quizItem = document.createElement('div');
+            quizItem.classList.add('quiz-item');
+            quizItem.dataset.quizId = quiz.id;
+            quizItem.innerHTML = `
+              <span>${quiz.title}</span>
+              <span>${new Date(quiz.created_at).toLocaleDateString()}</span>
+            `;
+
+            quizItem.addEventListener('click', () => {
+              if (selectedQuizId) {
+                document.querySelector(`[data-quiz-id="${selectedQuizId}"]`).style.backgroundColor = '';
+              }
+              selectedQuizId = quiz.id;
+              quizItem.style.backgroundColor = 'lightgrey';
+            });
+
+            quizList.appendChild(quizItem);
+          });
+        })
+        .catch(error => {
+          console.error('퀴즈 목록 로드 중 오류 발생:', error);
+        });
+    }
+
+    // 편집 및 삭제 버튼 기능
+    document.getElementById('edit-button').addEventListener('click', () => {
+      if (!selectedQuizId) {
+        alert('편집할 퀴즈를 선택해주세요.');
+        return;
+      }
+      window.location.href = `/edit/new?quizId=${selectedQuizId}`;
+    });
+
+    document.getElementById('delete-button').addEventListener('click', () => {
+      if (!selectedQuizId) {
+        alert('삭제할 퀴즈를 선택해주세요.');
+        return;
+      }
+
+      if (confirm('정말로 이 퀴즈를 삭제하시겠습니까?')) {
+        fetch(`/delete-quiz?quizId=${selectedQuizId}`, { method: 'DELETE' })
+          .then(response => {
+            if (response.ok) {
+              alert('퀴즈가 삭제되었습니다.');
+              loadQuizList(document.getElementById('username-placeholder').innerText);
+            } else {
+              throw new Error('퀴즈 삭제 실패');
+            }
+          })
+          .catch(error => {
+            console.error('퀴즈 삭제 중 오류 발생:', error);
+            alert('퀴즈 삭제 중 오류가 발생했습니다. 다시 시도해주세요.');
+          });
+      }
+    });
+  </script>
+</body>
+
+</html>

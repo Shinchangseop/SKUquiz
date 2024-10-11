@@ -11,10 +11,40 @@
   <!-- 정상화 퀴즈 제목 링크 -->
   <h1><a href="/" style="text-decoration: none; color: inherit;">정상화 퀴즈</a></h1>
 
+  <!-- 로그인 버튼/사용자 정보 표시 영역 -->
+  <div id="user-info" style="position: fixed; top: 20px; right: 20px;">
+    <!-- 로그인/로그아웃 버튼과 사용자 이름 표시를 위한 영역 -->
+  </div>
+
   <!-- 콘텐츠 추가 -->
   <div class="content-container">
     <p>퀴즈 참여 페이지입니다.</p>
   </div>
+
+  <script>
+    // 로그인 상태에 따라 로그인/로그아웃 버튼과 사용자 이름을 표시하는 JavaScript
+    document.addEventListener('DOMContentLoaded', function () {
+      fetch('/check-login')
+        .then(response => response.json())
+        .then(data => {
+          const userInfo = document.getElementById('user-info');
+          if (data.loggedIn) {
+            userInfo.innerHTML = `
+              <span style="font-size: 1.5em; font-weight: bold; margin-right: 150px; margin-top: 10px; display: inline-block;">${data.username}</span>
+              <button class="login-button" onclick="location.href='/logout/'">로그아웃</button>
+            `;
+          } else {
+            userInfo.innerHTML = `
+              <button class="login-button" onclick="location.href='/login/'">로그인</button>
+            `;
+          }
+        })
+        .catch(error => {
+          console.error('로그인 상태 확인 중 오류 발생:', error);
+        });
+    });
+
+  </script>
 </body>
 
 </html>

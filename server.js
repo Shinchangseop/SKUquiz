@@ -47,6 +47,31 @@ app.get('/edit', (req, res) => {
   res.sendFile(__dirname + '/public/edit.html');
 });
 
+app.get('/edit/new', (req, res) => {
+  res.sendFile(__dirname + '/public/edit_new.html');
+});
+
+// /edit/new/text 라우트 (로그인 여부 확인)
+app.get('/edit/new/text', (req, res) => {
+  if (!req.session.user) {
+    // 로그인이 되어 있지 않으면 login.html로 리다이렉트
+    res.send(`
+      <script>
+        alert('로그인이 필요합니다.');
+        window.location.href = '/login';
+      </script>
+    `);
+  } else {
+    // 로그인된 사용자만 edit_new_text.html 제공
+    res.sendFile(__dirname + '/public/edit_new_text.html');
+  }
+});
+
+
+app.get('/edit/modify', (req, res) => {
+  res.sendFile(__dirname + '/public/edit_modify.html');
+});
+
 app.get('/login', (req, res) => {
   res.sendFile(__dirname + '/public/login.html');
 });
@@ -58,18 +83,6 @@ app.get('/join', (req, res) => {
 app.get('/register', (req, res) => {
   res.sendFile(__dirname + '/public/register.html');
 });
-
-// 메인 페이지 라우트 (로그인 여부에 따라 다르게 렌더링)
-app.get('/', (req, res) => {
-  const isLoggedIn = req.session.user ? true : false;
-  const username = req.session.user ? req.session.user.username : '';
-
-  res.sendFile(__dirname + '/public/index.html', { headers: {
-    'Set-Cookie': `loggedIn=${isLoggedIn}; path=/`,
-    'Set-Cookie': `username=${username}; path=/`
-  }});
-});
-
 
 // 회원가입 처리 라우트
 app.post('/register', async (req, res) => {
@@ -149,7 +162,6 @@ app.post('/login', async (req, res) => {
   }
 });
 
-
 // 로그아웃 라우트 추가
 app.get('/logout', (req, res) => {
   req.session.destroy((err) => {
@@ -173,6 +185,85 @@ app.get('/check-login', (req, res) => {
     res.json({ loggedIn: false });
   }
 });
+
+// 퀴즈 저장 라우트
+app.post('/save-quiz', async (req, res) => {
+  const { title, username, questions } = req.body;
+
+  // 필수 데이터 검증
+  if (!title || !username || !Array.isArray(questions) || questions.length === 0) {
+    return res.status(400).json({ message: '필수 데이터 누락 또는 형식 오류' });
+  }
+
+  try {
+    // 퀴즈 저장
+    const quizResult = await pool.query(
+      'INSERT INTO quizzes (title, username) VALUES ($1, $2) RETURNING id',
+      [title, username]
+    );
+    const quizId = quizResult.rows[0].id;
+
+    // 각 질문 저장
+    for (const question of questions) {
+      await pool.query(
+        'INSERT INTO questions (quiz_id, question, answer) VALUES ($1, $2, $3)',
+        [quizId, question.question, question.answer]
+      );
+    }
+
+    res.json({ message: '퀴즈가 성공적으로 저장되었습니다.' });
+  } catch (error) {
+    console.error('퀴즈 저장 중 오류 발생:', error.message);
+    res.status(500).json({ message: '퀴즈 저장 중 오류가 발생했습니다. 다시 시도해주세요.' });
+  }
+});
+
+// 퀴즈 저장 라우트 추가
+app.post('/save-quiz', async (req, res) => {
+  const { title, username, questions } = req.body;
+
+  if (!title || !username || !questions || !Array.isArray(questions) || questions.length === 0) {
+    return res.status(400).json({ message: '필수 데이터 누락 또는 형식 오류' });
+  }
+
+  try {
+    const result = await pool.query(
+      'INSERT INTO quizzes (title, username, questions) VALUES ($1, $2, $3) RETURNING *',
+      [title, username, JSON.stringify(questions)]
+    );
+    res.status(200).json({ message: '퀴즈 저장 성공' });
+  } catch (error) {
+    console.error('퀴즈 저장 중 오류 발생:', error.message);
+    res.status(500).json({ message: '퀴즈 저장 실패' });
+  }
+});
+
+// 사용자의 퀴즈 목록 조회
+app.get('/quizzes', async (req, res) => {
+  const { username } = req.query;
+
+  try {
+    const result = await pool.query('SELECT * FROM quizzes WHERE username = $1', [username]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('퀴즈 목록 조회 중 오류 발생:', error.message);
+    res.status(500).json({ message: '퀴즈 목록 조회 실패' });
+  }
+});
+
+// 퀴즈 삭제
+app.delete('/delete-quiz', async (req, res) => {
+  const { quizId } = req.query;
+
+  try {
+    await pool.query('DELETE FROM quizzes WHERE id = $1', [quizId]);
+    res.status(200).send('퀴즈 삭제 성공');
+  } catch (error) {
+    console.error('퀴즈 삭제 중 오류 발생:', error.message);
+    res.status(500).json({ message: '퀴즈 삭제 실패' });
+  }
+});
+
 
 
 
