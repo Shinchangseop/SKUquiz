@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <title>퀴즈 회원 가입</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+  <!-- 정상화 퀴즈 제목 링크 -->
+  <h1><a href="/" style="text-decoration: none; color: inherit;">정상화 퀴즈</a></h1>
+
+  <!-- 회원 가입 UI 추가 -->
+  <div class="content-container" style="display: flex; flex-direction: column; align-items: center; margin-top: 150px;">
+    <form id="registerForm" action="/register" method="post" style="display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <label for="username" style="font-weight: bold; font-size: 1.5em; width: 150px; text-align: right;">아이디</label>
+        <input type="text" id="username" name="username" required style="padding: 10px; border: 2px solid black; font-family: 'CookieRun', Arial, sans-serif; font-size: 1.2em; flex: 1;">
+        <button type="button" id="checkUsernameButton" style="padding: 6.5px 15px; border: 2px solid black; cursor: pointer; font-size: 1.5em;">중복 확인</button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <label for="password" style="font-weight: bold; font-size: 1.5em; width: 150px; text-align: right;">비밀번호</label>
+        <input type="password" id="password" name="password" required style="padding: 10px; border: 2px solid black; font-family: 'CookieRun', Arial, sans-serif; font-size: 1.2em; flex: 1;">
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <label for="passwordrepeat" style="font-weight: bold; font-size: 1.5em; width: 150px; text-align: right;">비밀번호 확인</label>
+        <input type="password" id="passwordrepeat" name="passwordrepeat" required style="padding: 10px; border: 2px solid black; font-family: 'CookieRun', Arial, sans-serif; font-size: 1.2em; flex: 1;">
+      </div>
+
+      <button type="submit" style="margin-top: 20px; padding: 10px 20px; border: 2px solid black; cursor: pointer; font-size: 1.5em;">회원 가입</button>
+    </form>
+  </div>
+
+  <script>
+    let isUsernameAvailable = false;
+  
+    // 중복 확인 버튼 클릭 이벤트
+    document.getElementById("checkUsernameButton").addEventListener("click", function() {
+      const username = document.getElementById("username").value;
+  
+      if (!username) {
+        alert("아이디를 입력해주세요.");
+        return;
+      }
+  
+      // 서버로 POST 요청을 보내는 코드
+      fetch("/check-username", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username })  // JSON 형식으로 데이터 전달
+      })
+      .then(response => response.json().then(data => ({ status: response.status, body: data })))
+      .then(({ status, body }) => {
+        if (status === 200 && body.message === '사용 가능한 아이디입니다.') {
+          alert(body.message);
+          document.getElementById("checkUsernameButton").style.backgroundColor = "rgb(144, 238, 144)"; // 연한 녹색
+          isUsernameAvailable = true; // 아이디 사용 가능 상태로 변경
+        } else {
+          alert(body.message || "오류가 발생했습니다. 다시 시도해주세요.");
+          document.getElementById("checkUsernameButton").style.backgroundColor = "red"; // 빨간색으로 변경
+          isUsernameAvailable = false; // 아이디 사용 불가 상태로 변경
+        }
+      })
+      .catch(error => {
+        console.error("중복 확인 요청 중 오류:", error);
+        alert("서버와의 통신 중 오류가 발생했습니다. 다시 시도해주세요.");
+      });
+    });
+  
+    // 아이디 입력 필드 변경 이벤트
+    document.getElementById("username").addEventListener("input", function() {
+      // 아이디 값이 변경될 때 중복 확인 버튼 상태 초기화
+      document.getElementById("checkUsernameButton").style.backgroundColor = ""; // 버튼 색상 초기화
+      isUsernameAvailable = false; // 아이디 사용 가능 상태 초기화
+    });
+  
+    // 회원가입 폼 제출 이벤트
+    document.getElementById("registerForm").addEventListener("submit", function(event) {
+      console.log("isUsernameAvailable 상태:", isUsernameAvailable);
+      if (!isUsernameAvailable) {
+        event.preventDefault(); // 폼 제출 막기
+        alert("중복 확인 버튼을 눌러주세요. 아이디가 사용 가능한지 확인해야 합니다.");
+        return; // 중복 확인이 녹색일 때만 회원가입 진행
+      }
+    });
+  </script>
+  
+  
+  
+
+</body>
+
+</html>
