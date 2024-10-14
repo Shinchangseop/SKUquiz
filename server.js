@@ -67,6 +67,36 @@ app.get('/edit/new/text', (req, res) => {
   }
 });
 
+app.get('/edit/new/image', (req, res) => {
+  if (!req.session.user) {
+    // 로그인이 되어 있지 않으면 login.html로 리다이렉트
+    res.send(`
+      <script>
+        alert('로그인이 필요합니다.');
+        window.location.href = '/login';
+      </script>
+    `);
+  } else {
+    // 로그인된 사용자만 edit_new_text.html 제공
+    res.sendFile(__dirname + '/public/edit_new_image.html');
+  }
+});
+
+app.get('/edit/new/sound', (req, res) => {
+  if (!req.session.user) {
+    // 로그인이 되어 있지 않으면 login.html로 리다이렉트
+    res.send(`
+      <script>
+        alert('로그인이 필요합니다.');
+        window.location.href = '/login';
+      </script>
+    `);
+  } else {
+    // 로그인된 사용자만 edit_new_text.html 제공
+    res.sendFile(__dirname + '/public/edit_new_sound.html');
+  }
+});
+
 
 app.get('/edit/modify', (req, res) => {
   res.sendFile(__dirname + '/public/edit_modify.html');
@@ -82,6 +112,14 @@ app.get('/login', (req, res) => {
 
 app.get('/join', (req, res) => {
   res.sendFile(__dirname + '/public/join.html');
+});
+
+app.get('/join/single', (req, res) => {
+  res.sendFile(__dirname + '/public/join_single.html');
+});
+
+app.get('/join/multi', (req, res) => {
+  res.sendFile(__dirname + '/public/join_multi.html');
 });
 
 app.get('/register', (req, res) => {
@@ -191,20 +229,20 @@ app.get('/check-login', (req, res) => {
   }
 });
 
-// 퀴즈 저장 라우트
+// 퀴즈 저장 라우트 (type 추가)
 app.post('/save-quiz', async (req, res) => {
-  const { title, username, questions } = req.body;
+  const { title, username, questions, type } = req.body;
 
   // 필수 데이터 검증
-  if (!title || !username || !Array.isArray(questions) || questions.length === 0) {
+  if (!title || !username || !Array.isArray(questions) || questions.length === 0 || !type) {
     return res.status(400).json({ message: '필수 데이터 누락 또는 형식 오류' });
   }
 
   try {
     // 퀴즈 저장
     const quizResult = await pool.query(
-      'INSERT INTO quizzes (title, username) VALUES ($1, $2) RETURNING id',
-      [title, username]
+      'INSERT INTO quizzes (title, username, type) VALUES ($1, $2, $3) RETURNING id',
+      [title, username, type]
     );
     const quizId = quizResult.rows[0].id;
 
@@ -223,25 +261,6 @@ app.post('/save-quiz', async (req, res) => {
   }
 });
 
-// 퀴즈 저장 라우트 추가
-app.post('/save-quiz', async (req, res) => {
-  const { title, username, questions } = req.body;
-
-  if (!title || !username || !questions || !Array.isArray(questions) || questions.length === 0) {
-    return res.status(400).json({ message: '필수 데이터 누락 또는 형식 오류' });
-  }
-
-  try {
-    const result = await pool.query(
-      'INSERT INTO quizzes (title, username, questions) VALUES ($1, $2, $3) RETURNING *',
-      [title, username, JSON.stringify(questions)]
-    );
-    res.status(200).json({ message: '퀴즈 저장 성공' });
-  } catch (error) {
-    console.error('퀴즈 저장 중 오류 발생:', error.message);
-    res.status(500).json({ message: '퀴즈 저장 실패' });
-  }
-});
 
 // 사용자의 퀴즈 목록 조회
 app.get('/quizzes', async (req, res) => {
@@ -312,29 +331,68 @@ app.get('/get-quiz', async (req, res) => {
 
 // 퀴즈 수정 라우트
 app.post('/update-quiz', async (req, res) => {
-  const { quizId, title, questions } = req.body;
+  const { quizId, title, type, questions } = req.body;
 
-  if (!quizId || !title || !questions || !Array.isArray(questions)) {
+  // 필수 데이터 검증
+  if (!quizId || !title || !type || !Array.isArray(questions) || questions.length === 0) {
     return res.status(400).json({ message: '필수 데이터 누락 또는 형식 오류' });
   }
 
+  const client = await pool.connect();
+
   try {
-    // 퀴즈 제목 업데이트
-    await pool.query('UPDATE quizzes SET title = $1 WHERE id = $2', [title, quizId]);
+    await client.query('BEGIN'); // 트랜잭션 시작
+
+    // 퀴즈 제목 및 유형 업데이트
+    await client.query(
+      'UPDATE quizzes SET title = $1, type = $2 WHERE id = $3',
+      [title, type, quizId]
+    );
 
     // 기존의 질문들을 모두 삭제하고 새롭게 추가 (간단한 구현 방식)
-    await pool.query('DELETE FROM questions WHERE quiz_id = $1', [quizId]);
+    await client.query('DELETE FROM questions WHERE quiz_id = $1', [quizId]);
 
     for (const question of questions) {
-      await pool.query(
+      await client.query(
         'INSERT INTO questions (quiz_id, question, answer) VALUES ($1, $2, $3)',
         [quizId, question.question, question.answer]
       );
     }
 
+    await client.query('COMMIT'); // 트랜잭션 커밋
     res.json({ message: '퀴즈가 성공적으로 수정되었습니다.' });
   } catch (error) {
+    await client.query('ROLLBACK'); // 오류 발생 시 롤백
     console.error('퀴즈 수정 중 오류 발생:', error.message);
     res.status(500).json({ message: '퀴즈 수정 중 오류가 발생했습니다. 다시 시도해주세요.' });
+  } finally {
+    client.release(); // 연결 해제
+  }
+});
+
+
+
+
+// 문장 퀴즈 목록 가져오기 라우트
+app.get('/get-sentence-quizzes', async (req, res) => {
+  try {
+    const quizzesResult = await pool.query(`
+      SELECT 
+        q.id,
+        q.title,
+        q.username,
+        q.created_at,
+        COUNT(que.id) AS question_count
+      FROM quizzes q
+      LEFT JOIN questions que ON q.id = que.quiz_id
+      WHERE q.type = 'sentence'
+      GROUP BY q.id, q.title, q.username, q.created_at
+      ORDER BY q.title ASC
+    `);
+    
+    res.json(quizzesResult.rows);
+  } catch (error) {
+    console.error('퀴즈 목록을 불러오는 중 오류 발생:', error.message);
+    res.status(500).json({ message: '퀴즈 목록을 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.' });
   }
 });

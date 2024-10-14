@@ -7,8 +7,9 @@
   <link rel="stylesheet" href="/style.css"> <!-- 절대 경로로 수정 -->
   <style>
     .content-container p {
-    font-size: 1.5em; /* 글씨 크기를 기본 크기의 1.5배로 설정 */
+      font-size: 1.5em; /* 글씨 크기를 기본 크기의 1.5배로 설정 */
     }
+
     .content-container {
       display: flex;
       flex-direction: column;
@@ -18,10 +19,12 @@
 
     .quiz-list {
       width: 60%;
+      height: 450px; /* 고정된 높이 설정 */
       border: 2px solid black;
       padding: 20px;
       font-size: 1.5em;
       margin-top: 20px;
+      overflow-y: auto; /* 목록 스크롤 가능하도록 설정 */
     }
 
     .quiz-item {
@@ -112,9 +115,23 @@
             const quizItem = document.createElement('div');
             quizItem.classList.add('quiz-item');
             quizItem.dataset.quizId = quiz.id;
+            let quizType = '';
+            switch (quiz.type) {
+              case 'sentence':
+                quizType = '문장 퀴즈';
+                break;
+              case 'image':
+                quizType = '그림 퀴즈';
+                break;
+              case 'sound':
+                quizType = '소리 퀴즈';
+                break;
+              default:
+                quizType = '알 수 없음';
+            }
             quizItem.innerHTML = `
               <span>${quiz.title}</span>
-              <span>${new Date(quiz.created_at).toLocaleDateString()}</span>
+              <span>${quizType}ㅤㅤ${new Date(quiz.created_at).toLocaleDateString()}</span>
             `;
 
             quizItem.addEventListener('click', () => {
@@ -141,7 +158,6 @@
       }
       window.location.href = `/edit/modify/text?quizId=${selectedQuizId}`;
     });
-
 
     document.getElementById('delete-button').addEventListener('click', () => {
       if (!selectedQuizId) {

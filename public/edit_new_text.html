@@ -110,6 +110,9 @@
   <!-- 정상화 퀴즈 제목 링크 -->
   <h1><a href="/" style="text-decoration: none; color: inherit;">정상화 퀴즈</a></h1>
 
+  <!-- 로그인 버튼/사용자 정보 표시 영역 -->
+  <div id="user-info" style="position: fixed; top: 20px; right: 20px;"></div>
+
   <!-- 콘텐츠 추가 -->
   <div class="content-container">
     <!-- 목록 영역 -->
@@ -117,8 +120,7 @@
       <label for="title" style="font-weight: bold; font-size: 1.5em; margin-bottom: 5px; align-self: flex-start;">제목</label>
       <input type="text" id="title" style="width: 95%; padding: 15px; border: 2px solid black; margin-bottom: 15px; font-size: 1.5em; font-family: 'CookieRun', Arial, sans-serif;">
       <label for="list" style="font-weight: bold; font-size: 1.5em; margin-bottom: 5px; align-self: flex-start;">문제 목록</label>
-      <div id="list" class="list">
-      </div>
+      <div id="list" class="list"></div>
       <div class="move-buttons">
         <button id="moveUpButton">▲</button>
         <button id="moveDownButton">▼</button>
@@ -127,7 +129,6 @@
         <button id="addButton">문제 추가</button>
         <button id="removeButton">문제 제거</button>
       </div>
-
     </div>
 
     <!-- 문제 및 정답 작성 영역 -->
@@ -141,7 +142,7 @@
       <p style="font-size: 1em; margin-top: 10px; align-self: flex-start;">중복 정답은 '/'로 구분</p>
 
       <div style="display: flex;">
-        <button class="complete-button" onclick="saveQuiz()">완료</button>
+        <button class="complete-button" id="saveButton">저장</button>
         <button class="cancel-button" onclick="window.location.href='/edit/new'">취소</button>
       </div>
     </div>
@@ -156,8 +157,30 @@
     const questionTextarea = document.getElementById("question");
     const answerInput = document.getElementById("answer");
     const titleInput = document.getElementById("title");
+    const saveButton = document.getElementById("saveButton");
 
     let currentSelection = null;
+
+    // 로그인 상태 확인 후 사용자 정보 표시
+    document.addEventListener('DOMContentLoaded', function () {
+      fetch('/check-login')
+        .then(response => response.json())
+        .then(data => {
+          const userInfo = document.getElementById('user-info');
+          if (data.loggedIn) {
+            userInfo.innerHTML = `
+              <span style="font-size: 1.5em; font-weight: bold; margin-right: 150px; margin-top: 10px; display: inline-block;">${data.username}</span>
+              <button class="login-button" onclick="location.href='/logout/'">로그아웃</button>
+            `;
+          } else {
+            alert("로그인이 필요합니다.");
+            window.location.href = "/login";
+          }
+        })
+        .catch(error => {
+          console.error('로그인 상태 확인 중 오류 발생:', error);
+        });
+    });
 
     // + 버튼 클릭 시 새 문제 추가
     addButton.addEventListener("click", () => {
@@ -229,83 +252,72 @@
       }
     });
 
-    // 완료 버튼 클릭 시 퀴즈 저장 함수
-    document.addEventListener('DOMContentLoaded', function() {
+    // 저장 버튼 클릭 시 퀴즈 저장 함수
+    // 저장 버튼 클릭 시 퀴즈 저장 함수
+saveButton.addEventListener('click', () => {
   let username = '';
 
-  // 로그인 상태와 사용자명 가져오기
   fetch('/check-login')
     .then(response => response.json())
     .then(data => {
       if (data.loggedIn) {
         username = data.username;
+
+        const title = titleInput.value.trim();
+        const questions = [];
+
+        const listItems = document.querySelectorAll(".list-item");
+        listItems.forEach(item => {
+          if (item.dataset.question && item.dataset.answer) {
+            questions.push({
+              question: item.dataset.question.trim(),
+              answer: item.dataset.answer.trim()
+            });
+          }
+        });
+
+        if (!title || questions.length === 0) {
+          alert("퀴즈 제목과 문제를 모두 입력해주세요.");
+          return;
+        }
+
+        const quizData = {
+          title,
+          username,
+          questions,
+          type: "sentence" // 반드시 포함되어야 합니다.
+        };
+
+        fetch('/save-quiz', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(quizData)
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('서버 오류');
+            }
+            return response.json();
+          })
+          .then(data => {
+            alert('퀴즈가 성공적으로 저장되었습니다.');
+            window.location.href = '/';
+          })
+          .catch(error => {
+            console.error('퀴즈 저장 중 오류 발생:', error);
+            alert('퀴즈 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+          });
+      } else {
+        alert("로그인이 필요합니다.");
+        window.location.href = "/login";
       }
     })
     .catch(error => {
       console.error('로그인 상태 확인 중 오류 발생:', error);
     });
-
-  // 퀴즈 저장 함수
-  function saveQuiz() {
-    const title = document.getElementById('title').value.trim(); // 제목 입력란 값 가져오기
-    const questions = [];
-
-    const listItems = document.querySelectorAll(".list-item");
-    listItems.forEach(item => {
-      if (item.dataset.question && item.dataset.answer) {
-        questions.push({
-          question: item.dataset.question.trim(), // 질문 값
-          answer: item.dataset.answer.trim() // 정답 값
-        });
-      }
-    });
-
-    if (!title || questions.length === 0) {
-      alert("퀴즈 제목과 문제를 모두 입력해주세요.");
-      return;
-    }
-
-    if (!username) {
-      alert("로그인이 필요합니다.");
-      return;
-    }
-
-    const quizData = {
-      title,
-      username,
-      questions
-    };
-
-    fetch('/save-quiz', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(quizData)
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('서버 오류');
-      }
-      return response.json();
-    })
-    .then(data => {
-      alert('퀴즈가 성공적으로 저장되었습니다.');
-      window.location.href = '/';
-    })
-    .catch(error => {
-      console.error('퀴즈 저장 중 오류 발생:', error);
-      alert('퀴즈 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
-    });
-  }
-
-  // 저장 버튼 클릭 이벤트와 연결
-  const saveButton = document.querySelector('.complete-button');
-  if (saveButton) {
-    saveButton.addEventListener('click', saveQuiz);
-  }
 });
-
 
   </script>
 </body>
