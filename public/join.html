@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <title>퀴즈 제작</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .content-container {
+      text-align: center;
+      margin-top: 120px; /* 여백 조정 */
+    }
+
+    .action-option-container {
+      display: flex;
+      justify-content: center;
+      gap: 75px; /* 각 버튼 사이의 간격 */
+      margin-top: 75px;
+    }
+
+    .action-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: background-color 0.3s ease, color 0.3s ease; /* 배경색 및 글씨 색 전환 효과 */
+      border-radius: 15px; /* 버튼 둥근 테두리 추가 */
+      padding: 10px;
+    }
+
+    .action-option img {
+      width: 225px; /* 기존 150px의 1.5배 */
+      height: 225px; /* 기존 150px의 1.5배 */
+      border: 2px solid black;
+      margin-bottom: 15px; /* 기존의 1.5배 */
+      border-radius: 10px; /* 이미지 모서리를 살짝 둥글게 설정 */
+    }
+
+    .action-option p {
+      font-size: 1.8em; /* 기존의 1.2em의 1.5배 */
+      font-weight: bold;
+      margin-top: 10px; /* 이미지와 텍스트 사이의 간격 */
+    }
+
+    /* 버튼 호버 시 스타일 변경 */
+    .action-option:hover {
+      background-color: grey; /* 배경색을 회색으로 변경 */
+      color: white; /* 글씨 색 유지 */
+    }
+
+    h1 {
+      font-size: 3em; /* 기존 3em의 1.5배 */
+    }
+
+    p {
+      font-size: 2.5em; /* 설명 텍스트 크기도 1.5배로 증가 */
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 정상화 퀴즈 제목 링크 -->
+  <h1><a href="/" style="text-decoration: none; color: inherit;">정상화 퀴즈</a></h1>
+
+  <!-- 로그인 버튼/사용자 정보 표시 영역 -->
+  <div id="user-info" style="position: fixed; top: 20px; right: 20px;">
+    <!-- 로그인/로그아웃 버튼과 사용자 이름 표시를 위한 영역 -->
+  </div>
+
+  <!-- 콘텐츠 추가 -->
+  <div class="content-container">
+    <p>원하는 작업을 선택해주세요</p>
+
+    <!-- 새로 만들기 / 퀴즈 관리 버튼 영역 -->
+    <div class="action-option-container">
+      <div class="action-option" onclick="location.href='/join/single'">
+        <img src="/images/join_single.webp" alt="싱글 플레이">
+        <p>싱글 플레이</p>
+      </div>
+
+      <div class="action-option" onclick="location.href='/join/multi'">
+        <img src="/images/join_multi.webp" alt="멀티 플레이">
+        <p>멀티 플레이</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 로그인 상태에 따라 로그인/로그아웃 버튼과 사용자 이름을 표시하는 JavaScript
+    document.addEventListener('DOMContentLoaded', function () {
+      fetch('/check-login')
+        .then(response => response.json())
+        .then(data => {
+          const userInfo = document.getElementById('user-info');
+          if (data.loggedIn) {
+            userInfo.innerHTML = `
+              <span style="font-size: 1.5em; font-weight: bold; margin-right: 150px; margin-top: 10px; display: inline-block;">${data.username}</span>
+              <button class="login-button" onclick="location.href='/logout/'">로그아웃</button>
+            `;
+          } else {
+            userInfo.innerHTML = `
+              <button class="login-button" onclick="location.href='/login/'">로그인</button>
+            `;
+          }
+        })
+        .catch(error => {
+          console.error('로그인 상태 확인 중 오류 발생:', error);
+        });
+    });
+  </script>
+</body>
+
+</html>
