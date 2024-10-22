@@ -14,6 +14,10 @@ const pool = new Pool({
   port: 5432,
 });
 
+// userLastActive 객체와 로그인된 유저 목록
+let userLastActive = {};
+let loggedInUsers = [];
+
 // 요청 본문을 JSON 형식으로 파싱
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -32,7 +36,6 @@ app.use(express.static('public')); // public 폴더 내의 파일들을 정적�
 // 기본 라우트들
 app.get('/', (req, res) => {
   if (req.session.user) {
-    // 로그인한 사용자가 있는 경우
     res.send(`
       <h1>정상화 퀴즈</h1>
       <p>${req.session.user.username}님, 환영합니다!</p>
@@ -43,6 +46,72 @@ app.get('/', (req, res) => {
   }
 });
 
+// 로그인 처리 라우트
+app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE username = $1 AND password = $2', [username, password]);
+
+    if (result.rows.length > 0) {
+      req.session.user = result.rows[0];
+      const username = req.session.user.username;
+
+      // 로그인된 유저 목록에 추가 (중복 방지)
+      if (!loggedInUsers.includes(username)) {
+        loggedInUsers.push(username);
+      }
+
+      console.log('사용자 로그인:', req.session.user);
+      res.send(`
+        <script>
+          alert('로그인에 성공하셨습니다.');
+          window.location.href = '/';
+        </script>
+      `);
+    } else {
+      res.send(`
+        <script>
+          alert('아이디 또는 비밀번호가 잘못되었습니다.');
+          window.location.href = '/login';
+        </script>
+      `);
+    }
+  } catch (error) {
+    console.error('로그인 중 오류 발생:', error.message);
+    res.status(500).send('서버 오류가 발생했습니다. 다시 시도해주세요.');
+  }
+});
+
+
+// 로그아웃 라우트
+app.get('/logout', (req, res) => {
+  const username = req.session.user ? req.session.user.username : null;
+
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).send('로그아웃 중 오류가 발생했습니다.');
+    }
+
+    // 유저 목록에서 해당 유저 제거
+    if (username) {
+      loggedInUsers = loggedInUsers.filter(user => user !== username);
+    }
+
+    res.send(`
+      <script>
+        alert('로그아웃 되었습니다.');
+        window.location.href = '/';
+      </script>
+    `);
+  });
+});
+
+// 로그인된 유저 목록을 반환하는 API
+app.get('/api/connected-users', (req, res) => {
+  res.json({ users: loggedInUsers });
+});
+
 app.get('/edit', (req, res) => {
   res.sendFile(__dirname + '/public/edit.html');
 });
@@ -50,6 +119,38 @@ app.get('/edit', (req, res) => {
 app.get('/edit/new', (req, res) => {
   res.sendFile(__dirname + '/public/edit_new.html');
 });
+
+
+// 활성 상태 핑 API
+app.post('/api/ping', (req, res) => {
+  if (req.session.user) {
+    const username = req.session.user.username;
+    userLastActive[username] = Date.now(); // 유저의 마지막 활성 시간 업데이트
+
+    // 유저가 목록에서 삭제되었으면 다시 추가
+    if (!loggedInUsers.includes(username)) {
+      loggedInUsers.push(username);
+      console.log(`${username}가 다시 활성화되어 목록에 추가되었습니다.`);
+    }
+
+    res.json({ status: 'active' });
+  } else {
+    res.status(401).json({ status: 'not_logged_in' });
+  }
+});
+
+// 비활성 사용자 목록에서 제거 (주기적 체크)
+setInterval(() => {
+  const now = Date.now();
+  for (const [username, lastActive] of Object.entries(userLastActive)) {
+    if (now - lastActive > 600000) { // 18초 동안 활동이 없으면
+      loggedInUsers = loggedInUsers.filter(user => user !== username); // 목록에서 제거
+      delete userLastActive[username]; // 비활성화된 유저의 마지막 활동 시간 삭제
+      console.log(`${username}가 비활성화되어 목록에서 제거되었습니다.`);
+    }
+  }
+}, 60000); // 1.8초마다 비활성 유저 체크
+
 
 // /edit/new/text 라우트 (로그인 여부 확인)
 app.get('/edit/new/text', (req, res) => {

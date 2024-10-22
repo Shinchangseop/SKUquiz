@@ -21,13 +21,14 @@
     }
 
     .quiz-buttons button {
-      padding: 20px 40px;
+      width: 150px;
+      height: 80px;
       font-size: 1.5em;
       background-color: black;
       color: white;
       border: none;
       cursor: pointer;
-      border-radius: 10px;
+      border-radius: 100px;
     }
 
     .quiz-buttons button:hover {
@@ -35,8 +36,16 @@
       color: black;
     }
 
+    #search-filter {
+      font-size: 1.2em;
+      font-family: inherit;
+      padding: 10px;
+      margin-right: 10px;
+      margin-top: 10px;
+    }
+
     #search-input {
-      width: 60%;
+      width: 300%;
       padding: 10px;
       font-size: 1.2em;
       margin-top: 10px;
@@ -61,6 +70,7 @@
       text-align: center;
       padding: 10px;
       border-bottom: 1px solid black;
+      cursor: pointer;
     }
 
     #quiz-list thead th {
@@ -69,35 +79,108 @@
       background: #f9f9f9;
     }
 
+    .selected-row {
+      background-color: lightgrey;
+    }
+
     .controls {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       align-items: center;
       width: 70%;
       margin-top: 20px;
       padding: 0 15%;
       font-size: 1.5em;
-      justify-content: space-between; /* 내부 요소들 간의 간격을 조절 */
       gap: 20px;
     }
 
-    .controls button, .controls input {
+    .controls button {
       padding: 10px;
       font-size: 1.2em;
       font-family: inherit;
     }
 
-    #start-button {
-      padding: 8px 50px;
+    #start-button, #settings-button {
+      width: 170px;
       font-size: 1.2em;
       cursor: pointer;
-      margin-left: auto;
     }
 
-    #set-max-questions {
-      margin-left: 20px;
-      font-size: 1.2em;
+    .filter-container {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+      width: 60%;
     }
+
+    #filter-options {
+      display: none;
+      flex-direction: row;
+      align-items: center;
+      gap: 20px;
+      font-size: 1.2em;
+      font-family: inherit;
+    }
+
+    #filter-button {
+      font-size: 1.2em;
+      writing-mode: horizontal-tb;
+      white-space: nowrap;
+      transform: none;
+      padding: 10px;
+      margin-top: 10px;
+      margin-left: 10px;
+      width: 200px;
+    }
+
+    #question-filter, #date-filter {
+      margin-top: 10px;
+      font-size: 1.2em;
+      font-family: inherit;
+    }
+
+    /* 모달 창 스타일 */
+    .modal {
+      display: none; /* 기본적으로는 숨김 */
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5); /* 반투명 배경 */
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 15% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 800px;
+      height: 600px;
+      position: relative;
+    }
+
+    .close {
+      position: absolute;
+      right: 20px;
+      top: 10px;
+      font-size: 2em;
+      cursor: pointer;
+    }
+
+    .buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .buttons button {
+      padding: 10px 20px;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+
   </style>
 </head>
 
@@ -108,6 +191,19 @@
   <!-- 로그인 버튼/사용자 정보 표시 영역 -->
   <div id="user-info" style="position: fixed; top: 20px; right: 20px;"></div>
 
+  <!-- 모달 창 구조 추가 -->
+  <div id="settings-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>세부 설정</h2>
+      <!-- 세부 설정 내용이 들어갈 자리 -->
+      <div class="buttons">
+        <button id="modal-cancel-button">취소</button>
+        <button id="modal-save-button">저장</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 콘텐츠 추가 -->
   <div class="content-container">
     <!-- 퀴즈 선택 영역 -->
@@ -117,37 +213,63 @@
       <button id="sound-quiz-button">사운드 퀴즈</button>
     </div>
 
-    <!-- 검색 입력란 -->
-    <input type="text" id="search-input" placeholder="검색...">
+    <!-- 검색 입력란 및 필터 버튼 -->
+    <div class="filter-container">
+      <select id="search-filter">
+        <option value="title">퀴즈명</option>
+        <option value="username">제작자</option>
+      </select>
+      <input type="text" id="search-input" placeholder="검색...">
+      <button id="filter-button">필터</button>
+    </div>
+
+    <!-- 필터 옵션 -->
+    <div id="filter-options">
+      <div>
+        <label for="question-filter" style="font-size: 1.2em">문제 수 :</label>
+        <select id="question-filter">
+          <option value="all">제한 없음</option>
+          <option value="less_than_10">10문제 미만</option>
+          <option value="between_10_49">10문제 ~ 49문제</option>
+          <option value="more_than_50">50문제 이상</option>
+        </select>
+      </div>
+      <div>
+        <label for="date-filter" style="font-size: 1.2em">날짜 :</label>
+        <select id="date-filter">
+          <option value="all">전체 기간</option>
+          <option value="last_7_days">7일 이내</option>
+          <option value="last_month">한 달 이내</option>
+        </select>
+      </div>
+    </div>
 
     <!-- 퀴즈 목록 -->
     <div id="quiz-list-container">
       <table id="quiz-list">
         <thead>
           <tr>
-            <th>퀴즈 이름</th>
-            <th>제작자</th>
-            <th>제작일</th>
+            <th data-column="title">퀴즈명</th>
+            <th data-column="question_count">문제 수</th>
+            <th data-column="username">제작자</th>
+            <th data-column="created_at">제작일</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
 
-    <!-- 문제 수와 시작 버튼 -->
+    <!-- 시작 버튼 및 세부 설정 버튼 -->
     <div class="controls">
-      <div style="text-align: left;">
-        <label>문제 수</label>
-        <input type="number" id="num-questions" value="1" min="1" style="width: 50px; font-size: 1em;">
-        / <span id="max-questions">0</span>
-        <button id="set-max-questions">최대</button>
-      </div>
+      <button id="settings-button">세부 설정</button>
       <button id="start-button">시작</button>
     </div>
   </div>
 
   <script>
     let quizzes = [];
+    let currentSort = { column: null, order: 'asc' };
+    let filteredQuizzes = [];
 
     // 로그인 상태에 따라 로그인/로그아웃 버튼과 사용자 이름을 표시하는 JavaScript
     document.addEventListener('DOMContentLoaded', function () {
@@ -170,13 +292,26 @@
           console.error('로그인 상태 확인 중 오류 발생:', error);
         });
 
+        // '문장 퀴즈'를 자동으로 선택하여 테이블을 채우는 부분 추가
+    fetch('/get-sentence-quizzes')
+      .then(response => response.json())
+      .then(data => {
+        quizzes = data;
+        filteredQuizzes = quizzes;
+        displayQuizzes(filteredQuizzes);
+      })
+      .catch(error => {
+        console.error('퀴즈 목록을 불러오는 중 오류 발생:', error);
+      });
+
       // 문장 퀴즈 버튼 클릭 시 데이터 가져오기
       document.getElementById('sentence-quiz-button').addEventListener('click', () => {
         fetch('/get-sentence-quizzes')
           .then(response => response.json())
           .then(data => {
             quizzes = data;
-            displayQuizzes(quizzes);
+            filteredQuizzes = quizzes;
+            displayQuizzes(filteredQuizzes);
           })
           .catch(error => {
             console.error('퀴즈 목록을 불러오는 중 오류 발생:', error);
@@ -195,18 +330,58 @@
 
       // 검색 입력 이벤트 처리
       document.getElementById('search-input').addEventListener('input', (event) => {
-        const searchText = event.target.value.toLowerCase();
-        const filteredQuizzes = quizzes.filter(quiz =>
-          quiz.title.toLowerCase().includes(searchText)
-        );
-        displayQuizzes(filteredQuizzes);
+        applyFilters();
       });
+
+      // 필터 버튼 클릭 이벤트 처리
+      document.getElementById('filter-button').addEventListener('click', () => {
+        const filterOptions = document.getElementById('filter-options');
+        filterOptions.style.display = filterOptions.style.display === 'none' || filterOptions.style.display === '' ? 'flex' : 'none';
+      });
+
+      // 필터 선택 이벤트 처리
+      document.getElementById('question-filter').addEventListener('change', applyFilters);
+      document.getElementById('date-filter').addEventListener('change', applyFilters);
 
       // 최대 버튼 클릭 시 문제 수 최대값 설정
       document.getElementById('set-max-questions').addEventListener('click', () => {
         const maxQuestions = document.getElementById('max-questions').textContent;
         document.getElementById('num-questions').value = maxQuestions;
       });
+
+      // 테이블 헤더 클릭 이벤트 처리
+      document.querySelectorAll('#quiz-list th').forEach(header => {
+        header.addEventListener('click', () => {
+          const column = header.dataset.column;
+          if (currentSort.column === column) {
+            currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+          } else {
+            currentSort.column = column;
+            currentSort.order = column === 'question_count' ? 'desc' : 'asc';
+          }
+          sortQuizzes();
+          updateHeaders();
+          displayQuizzes(filteredQuizzes);
+        });
+      });
+    });
+
+    // '세부 설정' 버튼 클릭 시 모달 열기
+    document.getElementById('settings-button').addEventListener('click', function() {
+      document.getElementById('settings-modal').style.display = 'block';
+    });
+
+    // 모달 닫기 ('취소' 버튼 클릭 또는 X 버튼 클릭 시)
+    document.getElementById('modal-cancel-button').addEventListener('click', function() {
+      document.getElementById('settings-modal').style.display = 'none';
+    });
+    document.querySelector('.close').addEventListener('click', function() {
+      document.getElementById('settings-modal').style.display = 'none';
+    });
+
+    // '저장' 버튼 클릭 시 모달 닫기
+    document.getElementById('modal-save-button').addEventListener('click', function() {
+      document.getElementById('settings-modal').style.display = 'none';
     });
 
     // 퀴즈 목록 표시
@@ -217,10 +392,13 @@
         const row = document.createElement('tr');
         row.innerHTML = `
           <td style="padding: 10px; text-align: center;">${quiz.title}</td>
+          <td style="padding: 10px; text-align: center;">${quiz.question_count}</td>
           <td style="padding: 10px; text-align: center;">${quiz.username}</td>
           <td style="padding: 10px; text-align: center;">${quiz.created_at.split('T')[0]}</td>
         `;
         row.addEventListener('click', () => {
+          document.querySelectorAll('#quiz-list tbody tr').forEach(tr => tr.classList.remove('selected-row'));
+          row.classList.add('selected-row');
           document.getElementById('max-questions').textContent = quiz.question_count;
           document.getElementById('num-questions').max = quiz.question_count;
         });
@@ -235,7 +413,85 @@
       document.getElementById('max-questions').textContent = '0';
       document.getElementById('num-questions').value = '1';
     }
+
+    // 퀴즈 정렬
+    function sortQuizzes() {
+      filteredQuizzes.sort((a, b) => {
+        const column = currentSort.column;
+        const order = currentSort.order;
+        let valueA = a[column];
+        let valueB = b[column];
+
+        if (column === 'created_at') {
+          valueA = new Date(valueA);
+          valueB = new Date(valueB);
+        } else {
+          valueA = valueA.toString().toLowerCase();
+          valueB = valueB.toString().toLowerCase();
+        }
+
+        if (valueA < valueB) {
+          return order === 'asc' ? -1 : 1;
+        }
+        if (valueA > valueB) {
+          return order === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    // 헤더 업데이트
+    function updateHeaders() {
+      document.querySelectorAll('#quiz-list th').forEach(header => {
+        const column = header.dataset.column;
+        if (currentSort.column === column) {
+          header.textContent = `${header.textContent.split(' ')[0]} ${currentSort.order === 'asc' ? '▲' : '▼'}`;
+        } else {
+          header.textContent = header.textContent.split(' ')[0];
+        }
+      });
+    }
+
+    // 필터 적용 함수
+    function applyFilters() {
+      const searchText = document.getElementById('search-input').value.toLowerCase();
+      const filterType = document.getElementById('search-filter').value;
+      const questionFilter = document.getElementById('question-filter').value;
+      const dateFilter = document.getElementById('date-filter').value;
+
+      filteredQuizzes = quizzes.filter(quiz => {
+        let matchesSearch = quiz[filterType].toString().toLowerCase().includes(searchText);
+        let matchesQuestionFilter = true;
+        let matchesDateFilter = true;
+
+        if (questionFilter === 'less_than_10') {
+          matchesQuestionFilter = quiz.question_count < 10;
+        } else if (questionFilter === 'between_10_49') {
+          matchesQuestionFilter = quiz.question_count >= 10 && quiz.question_count <= 49;
+        } else if (questionFilter === 'more_than_50') {
+          matchesQuestionFilter = quiz.question_count >= 50;
+        }
+
+        if (dateFilter === 'last_7_days') {
+          const quizDate = new Date(quiz.created_at);
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          matchesDateFilter = quizDate >= sevenDaysAgo;
+        } else if (dateFilter === 'last_month') {
+          const quizDate = new Date(quiz.created_at);
+          const oneMonthAgo = new Date();
+          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+          matchesDateFilter = quizDate >= oneMonthAgo;
+        }
+
+        return matchesSearch && matchesQuestionFilter && matchesDateFilter;
+      });
+
+      displayQuizzes(filteredQuizzes);
+    }
   </script>
+
+  <script src="/js/ping.js"></script>
 </body>
 
 </html>

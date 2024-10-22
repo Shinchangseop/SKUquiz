@@ -5,49 +5,141 @@
   <meta charset="UTF-8">
   <title>정상화 퀴즈</title>
   <link rel="stylesheet" href="/style.css">
+  <style>
+    /* 버튼 스타일 */
+    .main-button {
+      display: inline-block;
+      padding: 22.5px 45px;
+      font-size: 2.25em; /* 글꼴 크기 1.5배 */
+      border-radius: 50px;
+      background-color: black;
+      color: white;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+      border: none; /* 테두리 제거 */
+      width: 300px; /* 가로 길이 25% 증가 */
+    }
+
+    .main-button:hover {
+      background-color: lightgray;
+      color: black;
+    }
+
+    .logout-button,
+    .register-button {
+      display: block;
+      margin-top: 10px;
+      font-size: 1.5em; /* 글꼴 크기 1.5배 */
+      background: none;
+      border: none; /* 테두리 제거 */
+      color: black;
+      cursor: pointer;
+      text-decoration: none; /* 밑줄 제거 */
+    }
+
+    .logout-button:hover,
+    .register-button:hover {
+      color: gray;
+    }
+
+    .center-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 80vh;
+    }
+
+    /* 퀴즈 제작 버튼 우측 상단 배치 */
+    #edit-button {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: black; /* 버튼 배경색 검은색 */
+      color: white; /* 글씨 색은 흰색으로 설정 */
+      padding: 10px 20px;
+      font-size: 1.5em;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      z-index: 1000;
+    }
+
+    #edit-button:hover {
+      background-color: lightgray;
+      color: black;
+    }
+
+    /* 사용자 이름 레이블 */
+    #username-label {
+      position: fixed;
+      top: 30px;
+      right: 180px; /* 퀴즈 제작 버튼과 간격 조정 */
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+  </style>
 </head>
 
 <body>
   <h1><a href="/" style="text-decoration: none; color: inherit;">정상화 퀴즈</a></h1>
 
-  <!-- 이미지 추가 -->
-  <img src="images/god.png" alt="God Image" style="width:200px;height:auto;margin-top:20px;">
+  <div class="center-container">
+    <!-- 중앙 로그인/게임 시작 버튼 -->
+    <button id="main-button" class="main-button" onclick="location.href='/login/'">로그인</button>
 
-  <!-- 로그인 버튼/사용자 정보 표시 영역 -->
-  <div id="user-info" style="position: fixed; top: 20px; right: 20px;">
-    <!-- 로그인/로그아웃 버튼과 사용자 이름 표시를 위한 영역 -->
+    <!-- 로그인 상태일 때 표시되는 로그아웃 버튼 -->
+    <button id="logout-button" class="logout-button" style="display: none;" onclick="location.href='/logout/'">로그아웃</button>
+
+    <!-- 회원가입 버튼 -->
+    <button id="register-button" class="register-button" onclick="location.href='/register/'">회원가입</button>
   </div>
 
-  <!-- 퀴즈 참여 및 제작 버튼을 중앙 아래쪽에 배치 -->
-  <div class="button-container">
-    <button class="participate-button" onclick="location.href='/join/'">퀴즈 참여</button>
-    <button class="create-button" onclick="location.href='/edit/'">퀴즈 제작</button>
-  </div>
+  <!-- 사용자 이름 표시 레이블 -->
+  <span id="username-label" style="display: none;"></span>
+
+  <!-- 퀴즈 제작 버튼 (로그인 상태에서만 표시) -->
+  <button id="edit-button" onclick="location.href='/edit/'">퀴즈 제작</button>
 
   <script>
-    // 로그인 상태에 따라 로그인/로그아웃 버튼과 사용자 이름을 표시하는 JavaScript
+    // 로그인 상태에 따라 버튼 변경 및 퀴즈 제작 버튼 표시
     document.addEventListener('DOMContentLoaded', function () {
       fetch('/check-login')
         .then(response => response.json())
         .then(data => {
-          const userInfo = document.getElementById('user-info');
+          const mainButton = document.getElementById('main-button');
+          const logoutButton = document.getElementById('logout-button');
+          const registerButton = document.getElementById('register-button');
+          const editButton = document.getElementById('edit-button');
+          const usernameLabel = document.getElementById('username-label');
+
           if (data.loggedIn) {
-            userInfo.innerHTML = `
-              <span style="font-size: 1.5em; font-weight: bold; margin-right: 150px; margin-top: 10px; display: inline-block;">${data.username}</span>
-              <button class="login-button" onclick="location.href='/logout/'">로그아웃</button>
-            `;
+            mainButton.innerHTML = '게임 시작';
+            mainButton.onclick = function () { location.href = '/join/'; };
+            logoutButton.style.display = 'block';
+            registerButton.style.display = 'none';  // 로그인 상태일 때 회원가입 버튼 숨김
+            editButton.style.display = 'block';
+            usernameLabel.innerHTML = data.username;  // 사용자 이름 표시
+            usernameLabel.style.display = 'block';
           } else {
-            userInfo.innerHTML = `
-              <button class="login-button" onclick="location.href='/login/'">로그인</button>
-            `;
+            mainButton.innerHTML = '로그인';
+            mainButton.onclick = function () { location.href = '/login/'; };
+            logoutButton.style.display = 'none';
+            registerButton.style.display = 'block';  // 로그아웃 상태일 때 회원가입 버튼 표시
+            editButton.style.display = 'none';
+            usernameLabel.style.display = 'none';  // 로그아웃 상태일 때 사용자 이름 숨김
           }
         })
         .catch(error => {
           console.error('로그인 상태 확인 중 오류 발생:', error);
         });
     });
-
   </script>
+
+  <script src="/js/ping.js"></script>
+
 </body>
 
 </html>
